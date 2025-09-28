@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Naija Adviser</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom focus styles for better accessibility and design */
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: #4f46e5; /* A nice indigo focus color */
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.3);
+        }
+        /* Smooth transitions for a better user experience */
+        .transition-all {
+            transition-property: all;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 300ms;
+        }
+        .slide-down {
+            max-height: 0;
+            overflow: hidden;
+        }
+        .slide-down.open {
+            max-height: 500px; /* Adjust as needed */
+        }
+        .nav-button {
+            @apply px-4 py-2 rounded-lg text-sm font-medium transition-colors;
+        }
+        .nav-button.active {
+            @apply bg-indigo-600 text-white;
+        }
+        .nav-button:not(.active) {
+            @apply text-gray-600 hover:bg-gray-200;
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #4f46e5;
+            animation: spin 1s ease infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        #actionPlanResult h2 { @apply text-lg font-semibold text-gray-800 mb-2; }
+        #actionPlanResult ul { @apply list-disc list-inside space-y-2 text-gray-600; }
+        #actionPlanResult p { @apply text-gray-600 mb-2; }
+        #actionPlanResult strong { @apply font-semibold text-gray-700; }
+
+        .chat-bubble { @apply p-3 rounded-lg max-w-sm; }
+        .chat-bubble.user { @apply bg-indigo-500 text-white self-end; }
+        .chat-bubble.ai { @apply bg-gray-200 text-gray-800 self-start; }
+
+        .suggestions-container {
+            @apply absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 shadow-lg max-h-60 overflow-y-auto;
+        }
+        .suggestion-item {
+            @apply px-4 py-2 cursor-pointer hover:bg-gray-100;
+        }
+
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 flex items-center justify-center min-h-screen py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-4xl w-full space-y-8">
+        <!-- Main container with shadow and rounded corners -->
+        <div class="bg-white p-8 sm:p-10 rounded-2xl shadow-lg">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">Naija Adviser</h1>
+                <p class="mt-2 text-sm text-gray-600">Your opinion matters. Please fill out the form below.</p>
+            </div>
+
+            <!-- Navigation -->
+            <div class="mb-6 flex justify-center bg-gray-100 rounded-lg p-1">
+                <button id="showFormBtn" class="nav-button active w-1/2">Form</button>
+                <button id="showDashboardBtn" class="nav-button w-1/2">Dashboard</button>
+            </div>
+
+            <!-- Form Page Container -->
+            <div id="formPage">
+                <!-- Form starts here -->
+                <form id="submissionForm" class="space-y-6" novalidate>
+                    <!-- Voter Information Section -->
+                    <div class="space-y-6">
+                         <h2 class="text-xl font-semibold border-b pb-2 text-gray-700">Civic Engagement</h2>
+                         <!-- Do you have a voter's card? -->
+                         <div>
+                            <label class="block text-sm font-medium text-gray-700">Do you have a voter's card?</label>
+                            <div class="mt-2 flex items-center space-x-6">
+                                <label class="flex items-center">
+                                    <input type="radio" name="votersCard" value="yes" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300">
+                                    <span class="ml-2 text-sm text-gray-900">Yes</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="votersCard" value="no" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300">
+                                    <span class="ml-2 text-sm text-gray-900">No</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Do you vote? (Conditional) -->
+                        <div id="voteContainer" class="slide-down transition-all space-y-4">
+                            <label class="block text-sm font-medium text-gray-700">Do you vote?</label>
+                            <div class="mt-2 flex items-center space-x-6">
+                                <label class="flex items-center">
+                                    <input type="radio" name="votes" value="yes" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300">
+                                    <span class="ml-2 text-sm text-gray-900">Yes</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="votes" value="no" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300">
+                                    <span class="ml-2 text-sm text-gray-900">No</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Reason for not voting (Conditional) -->
+                        <div id="voteReasonContainer" class="slide-down transition-all">
+                             <label for="voteReason" class="block text-sm font-medium text-gray-700">If no, what are your reasons?</label>
+                            <textarea id="voteReason" name="voteReason" rows="3" class="form-input mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+                        </div>
+
+                        <!-- New Civic Questions -->
+                        <div class="space-y-4 pt-4 border-t">
+                             <div>
+                                <label class="block text-sm font-medium text-gray-700">Do you know your ward Councillor?</label>
+                                <div class="mt-2 flex items-center space-x-6">
+                                    <label class="flex items-center">
+                                        <input type="radio" name="knowsCouncillor" value="yes" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300">
+                                        <span class="ml-2 text-sm text-gray-900">Yes</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="knowsCouncillor" value="no" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300">
+                                        <span class="ml-2 text-sm text-gray-900">No</span>
+                                    </label>
+                                </div>
+                            </div>
+                             <div>
+                                <label class="block text-sm font-medium text-gray-700">Do you know your Local Government Chairman?</label>
+                                <div class="mt-2 flex items-center space-x-6">
+                                    <label class="flex items-center">
+                                        <input type="radio" name="knowsLgChairman" value="yes" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300">
+                                        <span class="ml-2 text-sm text-gray-900">Yes</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="knowsLgChairman" value="no" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300">
+                                        <span class="ml-2 text-sm text-gray-900">No</span>
+                                    </label>
+                                </div>
+                            </div>
+                             <div>
+                                <label class="block text-sm font-medium text-gray-700">Do you know your House of Representatives member?</label>
+                                <div class="mt-2 flex items-center space-x-6">
+                                    <label class="flex items-center">
+                                        <input type="radio" name="knowsRep" value="yes" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300">
+                                        <span class="ml-2 text-sm text-gray-900">Yes</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="knowsRep" value="no" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300">
+                                        <span class="ml-2 text-sm text-gray-900">No</span>
+                                    </label>
+                                </div>
+                            </div>
+                             <div>
+                                <label class="block text-sm font-medium text-gray-700">Do you know your senator?</label>
+                                <div class="mt-2 flex items-center space-x-6">
+                                    <label class="flex items-center">
+                                        <input type="radio" name="knowsSenator" value="yes" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300">
+                                        <span class="ml-2 text-sm text-gray-900">Yes</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="knowsSenator" value="no" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300">
+                                        <span class="ml-2 text-sm text-gray-900">No</span>
+                                    </label>
+                                </div>
+                            </div>
+                             <div>
+                                <label class="block text-sm font-medium text-gray-700">Do you know how much your state receives in a month?</label>
+                                <div class="mt-2 flex items-center space-x-6">
+                                    <label class="flex items-center">
+                                        <input type="radio" name="knowsStateAllocation" value="yes" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300">
+                                        <span class="ml-2 text-sm text-gray-900">Yes</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="knowsStateAllocation" value="no" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300">
+                                        <span class="ml-2 text-sm text-gray-900">No</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Personal Information Section -->
+                    <div class="space-y-6 pt-6 border-t">
+                        <h2 class="text-xl font-semibold border-b pb-2 text-gray-700">Personal Information</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- State of Residence -->
+                            <div class="relative">
+                                <label for="residence" class="block text-sm font-medium text-gray-700">State of Residence</label>
+                                <input type="text" id="residence" name="residence" required autocomplete="off" class="form-input mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <div id="residenceSuggestions" class="suggestions-container hidden"></div>
+                            </div>
+                            
+                            <!-- State of Origin -->
+                            <div id="originContainer" class="relative">
+                                <label for="origin" class="block text-sm font-medium text-gray-700">State of Origin</label>
+                                <input type="text" id="origin" name="origin" autocomplete="off" class="form-input mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <div id="originSuggestions" class="suggestions-container hidden"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Same as Residence Checkbox -->
+                        <div class="flex items-center">
+                            <input id="sameAsResidence" type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                            <label for="sameAsResidence" class="ml-2 block text-sm text-gray-900">State of Origin is same as Residence</label>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                             <!-- Age -->
+                             <div>
+                                <label for="age" class="block text-sm font-medium text-gray-700">Age</label>
+                                <input type="number" id="age" name="age" required class="form-input mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            </div>
+
+                            <!-- Sex -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Sex</label>
+                                <div class="mt-2 flex items-center space-x-6">
+                                    <label class="flex items-center">
+                                        <input type="radio" name="sex" value="male" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300">
+                                        <span class="ml-2 text-sm text-gray-900">Male</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="sex" value="female" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300">
+                                        <span class="ml-2 text-sm text-gray-900">Female</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                         <!-- Marital Status -->
+                         <div>
+                            <label for="maritalStatus" class="block text-sm font-medium text-gray-700">Marital Status</label>
+                            <select id="maritalStatus" name="maritalStatus" required class="form-select mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="">Please select...</option>
+                                <option>Single and never married</option>
+                                <option>Married</option>
+                                <option>Divorced</option>
+                                <option>Widower/Widow</option>
+                                <option>Single parent and never married</option>
+                                <option>Separated but still married</option>
+                            </select>
+                        </div>
+
+                        <!-- Have Children -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Do you have children?</label>
+                            <div class="mt-2 flex items-center space-x-6">
+                                <label class="flex items-center">
+                                    <input type="radio" name="hasChildren" value="yes" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300">
+                                    <span class="ml-2 text-sm text-gray-900">Yes</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="hasChildren" value="no" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300">
+                                    <span class="ml-2 text-sm text-gray-900">No</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Number of Children (Conditional) -->
+                        <div id="childrenCountContainer" class="slide-down transition-all">
+                            <label for="childrenCount" class="block text-sm font-medium text-gray-700">Number of Children</label>
+                            <input type="number" id="childrenCount" name="childrenCount" min="1" class="form-input mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        </div>
+                    </div>
+
+
+                    <!-- Professional Information Section -->
+                    <div class="space-y-6 pt-6 border-t">
+                        <h2 class="text-xl font-semibold border-b pb-2 text-gray-700">Professional Background</h2>
+                         <!-- Level of Education -->
+                         <div>
+                            <label for="education" class="block text-sm font-medium text-gray-700">Highest Level of Education</label>
+                            <select id="education" name="education" required class="form-select mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="">Please select...</option>
+                                <option>Primary</option>
+                                <option>Secondary</option>
+                                <option>Degree</option>
+                                <option>Graduate</option>
+                                <option>Other</option>
+                            </select>
+                        </div>
+
+                         <!-- Other Education (Conditional) -->
+                        <div id="otherEducationContainer" class="slide-down transition-all">
+                            <label for="otherEducation" class="block text-sm font-medium text-gray-700">Please specify your education or training</label>
+                            <input type="text" id="otherEducation" name="otherEducation" class="form-input mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        </div>
+
+                        <!-- Degree/Graduate Course Name (Conditional) -->
+                        <div id="courseNameContainer" class="slide-down transition-all space-y-4">
+                            <div>
+                                <label for="courseName" class="block text-sm font-medium text-gray-700">Degree or Graduate Course Name</label>
+                                <input type="text" id="courseName" name="courseName" class="form-input mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label for="courseYear" class="block text-sm font-medium text-gray-700">What year did you graduate?</label>
+                                <input type="text" id="courseYear" name="courseYear" placeholder="e.g., 2023" class="form-input mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            </div>
+                        </div>
+
+                        <!-- Employment Status -->
+                        <div>
+                            <label for="employmentStatus" class="block text-sm font-medium text-gray-700">Employment Status</label>
+                            <select id="employmentStatus" name="employmentStatus" required class="form-select mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="">Please select...</option>
+                                <option value="employed">Employed</option>
+                                <option value="unemployed">Unemployed</option>
+                                <option value="self-employed">Self-Employed</option>
+                                <option value="student">Student</option>
+                            </select>
+                        </div>
+
+                        <!-- Self-Employed Details (Conditional) -->
+                        <div id="selfEmployedContainer" class="slide-down transition-all space-y-4">
+                            <div>
+                                <label for="selfEmployedActivity" class="block text-sm font-medium text-gray-700">What business or activities are you self-employed in?</label>
+                                <textarea id="selfEmployedActivity" name="selfEmployedActivity" rows="3" class="form-input mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Unemployed Details (Conditional) -->
+                        <div id="unemployedContainer" class="slide-down transition-all space-y-4">
+                            <div>
+                                <label for="unemployedTime" class="block text-sm font-medium text-gray-700">What have you been doing with your time?</label>
+                                <textarea id="unemployedTime" name="unemployedTime" rows="3" class="form-input mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+                            </div>
+                             <div>
+                                <label for="unemployedPlan" class="block text-sm font-medium text-gray-700">What is your plan?</label>
+                                <textarea id="unemployedPlan" name="unemployedPlan" rows="3" class="form-input mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Job Role (Conditional) -->
+                        <div id="jobRoleContainer" class="slide-down transition-all space-y-4">
+                            <div>
+                                <label for="jobRole" class="block text-sm font-medium text-gray-700">What is your job role?</label>
+                                <input type="text" id="jobRole" name="jobRole" class="form-input mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            </div>
+                        </div>
+
+                        <!-- Student Details (Conditional) -->
+                        <div id="studentDetailsContainer" class="slide-down transition-all space-y-4">
+                            <div>
+                                <label for="schoolName" class="block text-sm font-medium text-gray-700">School Name</label>
+                                <input type="text" id="schoolName" name="schoolName" class="form-input mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label for="course" class="block text-sm font-medium text-gray-700">Course of Study</label>
+                                <input type="text" id="course" name="course" class="form-input mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label for="studyYear" class="block text-sm font-medium text-gray-700">Year of Study</label>
+                                <input type="text" id="studyYear" name="studyYear" class="form-input mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Business Details Section (Conditional) -->
+                    <div id="businessIdeaSection" class="space-y-6 pt-6 border-t hidden">
+                        <h2 class="text-xl font-semibold border-b pb-2 text-gray-700">Skills & Business Idea</h2>
+                         <!-- Skills -->
+                         <div>
+                            <label for="skills" class="block text-sm font-medium text-gray-700">What skills do you have?</label>
+                            <textarea id="skills" name="skills" rows="3" class="form-input mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+                        </div>
+                        <!-- Type of Work -->
+                        <div>
+                            <label for="workType" class="block text-sm font-medium text-gray-700">What type of work can you do?</label>
+                            <textarea id="workType" name="workType" rows="3" class="form-input mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"></textarea>
+                        </div>
+
+                        <!-- Business Funding -->
+                        <div>
+                            <label for="funding" class="block text-sm font-medium text-gray-700">If business, how much would you need for your business? (£)</label>
+                            <input type="number" id="funding" name="funding" placeholder="e.g., 10000" class="form-input mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        </div>
+
+                        <!-- Business Plan Upload -->
+                        <div>
+                            <label for="businessPlan" class="block text-sm font-medium text-gray-700">Upload your business idea/plan</label>
+                            <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg">
+                                <div class="space-y-1 text-center">
+                                    <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
+                                    <div class="flex text-sm text-gray-600">
+                                        <label for="businessPlan" class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
+                                            <span>Upload a file</span>
+                                            <input id="businessPlan" name="businessPlan" type="file" class="sr-only">
+                                        </label>
+                                        <p class="pl-1">or drag and drop</p>
+                                    </div>
+                                    <p class="text-xs text-gray-500">PDF, DOC, DOCX up to 10MB</p>
+                                    <p id="fileName" class="text-sm text-green-600 font-medium mt-2"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contact Information Section -->
+                    <div class="space-y-6 pt-6 border-t">
+                        <h2 class="text-xl font-semibold border-b pb-2 text-gray-700">Contact Permission</h2>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">May we contact you regarding your submission?</label>
+                            <div class="mt-2 flex items-center space-x-6">
+                                <label class="flex items-center">
+                                    <input type="radio" name="contactPermission" value="yes" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300">
+                                    <span class="ml-2 text-sm text-gray-900">Yes</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="contactPermission" value="no" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300" checked>
+                                    <span class="ml-2 text-sm text-gray-900">No</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Contact Details (Conditional) -->
+                        <div id="contactDetailsContainer" class="slide-down transition-all space-y-4">
+                            <div>
+                                <label for="contactName" class="block text-sm font-medium text-gray-700">Full Name</label>
+                                <input type="text" id="contactName" name="contactName" class="form-input mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label for="contactMobile" class="block text-sm font-medium text-gray-700">Mobile Number</label>
+                                <input type="tel" id="contactMobile" name="contactMobile" class="form-input mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label for="contactEmail" class="block text-sm font-medium text-gray-700">Email Address</label>
+                                <input type="email" id="contactEmail" name="contactEmail" class="form-input mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div>
+                        <button type="submit" class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+                            Submit & Get Action Plan
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Dashboard Page Container -->
+            <div id="dashboardPage" class="hidden">
+                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-gray-100 p-6 rounded-lg text-center">
+                        <h3 class="text-gray-500 text-sm font-medium">Total Submissions</h3>
+                        <p class="text-3xl font-bold text-gray-900">1,428</p>
+                    </div>
+                     <div class="bg-gray-100 p-6 rounded-lg text-center">
+                        <h3 class="text-gray-500 text-sm font-medium">Voter's Card Holders</h3>
+                        <p class="text-3xl font-bold text-gray-900">72%</p>
+                    </div>
+                     <div class="bg-gray-100 p-6 rounded-lg text-center">
+                        <h3 class="text-gray-500 text-sm font-medium">Avg. Age</h3>
+                        <p class="text-3xl font-bold text-gray-900">29</p>
+                    </div>
+                 </div>
+                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Employment Status</h3>
+                        <canvas id="employmentChart"></canvas>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Gender Distribution</h3>
+                        <canvas id="genderChart"></canvas>
+                    </div>
+                 </div>
+            </div>
+
+            <!-- Action Plan Page -->
+            <div id="actionPlanPage" class="hidden">
+                <div id="loadingState" class="flex flex-col items-center justify-center space-y-4 py-12">
+                    <div class="spinner"></div>
+                    <p class="text-lg text-gray-600">Generating your personalised action plan...</p>
+                </div>
+                <div id="actionPlanContent" class="hidden">
+                    <div id="actionPlanResult" class="prose prose-sm max-w-none p-4 bg-gray-50 rounded-lg mb-6">
+                        <!-- AI-generated content will be inserted here -->
+                    </div>
+                    
+                    <div class="pt-6 border-t">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-4">Have questions? Ask here.</h2>
+                        <div id="chatHistory" class="space-y-4 mb-4 h-64 overflow-y-auto p-4 bg-gray-100 rounded-lg flex flex-col">
+                           <!-- Chat messages will appear here -->
+                        </div>
+                        <div class="flex space-x-2">
+                           <input type="text" id="chatInput" placeholder="Type your question..." class="form-input flex-grow rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                           <button id="sendChatBtn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Send</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        
+        <!-- Success Message Modal -->
+        <div id="successMessage" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden items-center justify-center z-50" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div class="relative mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+                <div class="mt-3 text-center">
+                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+                        <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    </div>
+                    <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Submission Successful!</h3>
+                     <p class="text-sm text-gray-500 mt-2">
+                        Thank you. Your submission has been received.
+                    </p>
+                    <div class="items-center px-4 py-3 mt-4">
+                        <button id="closeModal" class="px-4 py-2 bg-indigo-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- DOM Element Selection ---
+            const showFormBtn = document.getElementById('showFormBtn');
+            const showDashboardBtn = document.getElementById('showDashboardBtn');
+            const formPage = document.getElementById('formPage');
+            const dashboardPage = document.getElementById('dashboardPage');
+            const actionPlanPage = document.getElementById('actionPlanPage');
+            
+            const votersCardRadios = document.querySelectorAll('input[name="votersCard"]');
+            const voteContainer = document.getElementById('voteContainer');
+            const votesRadios = document.querySelectorAll('input[name="votes"]');
+            const voteReasonContainer = document.getElementById('voteReasonContainer');
+
+            const sameAsResidenceCheckbox = document.getElementById('sameAsResidence');
+            const originContainer = document.getElementById('originContainer');
+            const originInput = document.getElementById('origin');
+            const residenceInput = document.getElementById('residence');
+            
+            const employmentStatusSelect = document.getElementById('employmentStatus');
+            const studentDetailsContainer = document.getElementById('studentDetailsContainer');
+            const jobRoleContainer = document.getElementById('jobRoleContainer');
+            const selfEmployedContainer = document.getElementById('selfEmployedContainer');
+            const unemployedContainer = document.getElementById('unemployedContainer');
+            const businessIdeaSection = document.getElementById('businessIdeaSection');
+
+            const educationSelect = document.getElementById('education');
+            const courseNameContainer = document.getElementById('courseNameContainer');
+            const otherEducationContainer = document.getElementById('otherEducationContainer');
+
+            const hasChildrenRadios = document.querySelectorAll('input[name="hasChildren"]');
+            const childrenCountContainer = document.getElementById('childrenCountContainer');
+
+            const fileInput = document.getElementById('businessPlan');
+            const fileNameDisplay = document.getElementById('fileName');
+            
+            const contactPermissionRadios = document.querySelectorAll('input[name="contactPermission"]');
+            const contactDetailsContainer = document.getElementById('contactDetailsContainer');
+
+            const form = document.getElementById('submissionForm');
+            const successMessage = document.getElementById('successMessage');
+            const closeModalButton = document.getElementById('closeModal');
+            
+            const loadingState = document.getElementById('loadingState');
+            const actionPlanContent = document.getElementById('actionPlanContent');
+            const actionPlanResult = document.getElementById('actionPlanResult');
+            const chatHistory = document.getElementById('chatHistory');
+            const chatInput = document.getElementById('chatInput');
+            const sendChatBtn = document.getElementById('sendChatBtn');
+
+            let employmentChartInstance = null;
+            let genderChartInstance = null;
+            let conversationHistory = []; // To store context for follow-up questions
+
+            const nigerianStates = [
+                "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno",
+                "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu", "FCT - Abuja", "Gombe",
+                "Imo", "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi", "Kogi", "Kwara", "Lagos",
+                "Nasarawa", "Niger", "Ogun", "Ondo", "Osun", "Oyo", "Plateau", "Rivers", "Sokoto",
+                "Taraba", "Yobe", "Zamfara"
+            ];
+
+            // --- Page Navigation Logic ---
+            function navigateTo(page) {
+                formPage.classList.add('hidden');
+                dashboardPage.classList.add('hidden');
+                actionPlanPage.classList.add('hidden');
+                
+                showFormBtn.classList.remove('active');
+                showDashboardBtn.classList.remove('active');
+
+                if(page === 'form') {
+                    formPage.classList.remove('hidden');
+                    showFormBtn.classList.add('active');
+                } else if (page === 'dashboard') {
+                    dashboardPage.classList.remove('hidden');
+                    showDashboardBtn.classList.add('active');
+                    initializeDashboardCharts();
+                } else if (page === 'actionPlan') {
+                    actionPlanPage.classList.remove('hidden');
+                }
+            }
+
+            showFormBtn.addEventListener('click', () => navigateTo('form'));
+            showDashboardBtn.addEventListener('click', () => navigateTo('dashboard'));
+
+
+            // --- Autocomplete Logic for States ---
+            function setupAutocomplete(inputEl, suggestionsEl) {
+                inputEl.addEventListener('input', () => {
+                    const query = inputEl.value.toLowerCase();
+                    suggestionsEl.innerHTML = '';
+                    if (!query) {
+                        suggestionsEl.classList.add('hidden');
+                        return;
+                    }
+
+                    const filteredStates = nigerianStates.filter(state => state.toLowerCase().startsWith(query));
+                    
+                    if (filteredStates.length > 0) {
+                        suggestionsEl.classList.remove('hidden');
+                        filteredStates.forEach(state => {
+                            const item = document.createElement('div');
+                            item.classList.add('suggestion-item');
+                            item.textContent = state;
+                            item.addEventListener('click', () => {
+                                inputEl.value = state;
+                                suggestionsEl.classList.add('hidden');
+                            });
+                            suggestionsEl.appendChild(item);
+                        });
+                    } else {
+                        suggestionsEl.classList.add('hidden');
+                    }
+                });
+            }
+
+            setupAutocomplete(residenceInput, document.getElementById('residenceSuggestions'));
+            setupAutocomplete(originInput, document.getElementById('originSuggestions'));
+
+            // Hide suggestions when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.relative')) {
+                    document.getElementById('residenceSuggestions').classList.add('hidden');
+                    document.getElementById('originSuggestions').classList.add('hidden');
+                }
+            });
+
+
+            // --- Event Listeners for Conditional Logic ---
+            
+            votersCardRadios.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    if(this.value === 'yes') {
+                        voteContainer.classList.add('open');
+                        voteContainer.querySelector('input[name="votes"]').required = true;
+                    } else {
+                        voteContainer.classList.remove('open');
+                        voteContainer.querySelectorAll('input[name="votes"]').forEach(input => {
+                            input.required = false;
+                            input.checked = false;
+                        });
+                        voteReasonContainer.classList.remove('open');
+                        voteReasonContainer.querySelector('textarea').required = false;
+                        voteReasonContainer.querySelector('textarea').value = '';
+                    }
+                });
+            });
+
+            votesRadios.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    if (this.value === 'no') {
+                        voteReasonContainer.classList.add('open');
+                        voteReasonContainer.querySelector('textarea').required = true;
+                    } else {
+                        voteReasonContainer.classList.remove('open');
+                        voteReasonContainer.querySelector('textarea').required = false;
+                        voteReasonContainer.querySelector('textarea').value = '';
+                    }
+                });
+            });
+
+            sameAsResidenceCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    originContainer.style.display = 'none';
+                    originInput.required = false;
+                    originInput.value = residenceInput.value;
+                } else {
+                    originContainer.style.display = 'block';
+                    originInput.required = true;
+                     originInput.value = '';
+                }
+            });
+            
+             residenceInput.addEventListener('input', () => {
+                if (sameAsResidenceCheckbox.checked) {
+                    originInput.value = residenceInput.value;
+                }
+            });
+
+            employmentStatusSelect.addEventListener('change', function() {
+                const hideAllEmploymentSections = () => {
+                    [studentDetailsContainer, jobRoleContainer, selfEmployedContainer, unemployedContainer].forEach(section => {
+                        section.classList.remove('open');
+                        section.querySelectorAll('input, textarea').forEach(input => {
+                            input.required = false;
+                            input.value = '';
+                        });
+                    });
+                };
+                hideAllEmploymentSections();
+
+                const businessFields = businessIdeaSection.querySelectorAll('input, textarea, select');
+                const value = this.value;
+
+                if (['student', 'self-employed', 'unemployed'].includes(value)) {
+                    businessIdeaSection.classList.remove('hidden');
+                    businessFields.forEach(field => {
+                       if(field.id !== 'businessPlan') field.required = true;
+                    });
+
+                    if (value === 'student') {
+                        studentDetailsContainer.classList.add('open');
+                        studentDetailsContainer.querySelectorAll('input').forEach(input => input.required = true);
+                    } else if (value === 'self-employed') {
+                        selfEmployedContainer.classList.add('open');
+                        selfEmployedContainer.querySelector('textarea').required = true;
+                    } else if (value === 'unemployed') {
+                        unemployedContainer.classList.add('open');
+                        unemployedContainer.querySelectorAll('textarea').forEach(input => input.required = true);
+                    }
+                } else if (value === 'employed') {
+                    jobRoleContainer.classList.add('open');
+                    jobRoleContainer.querySelector('input').required = true;
+                    businessIdeaSection.classList.add('hidden');
+                    businessFields.forEach(field => field.required = false);
+                } else {
+                    businessIdeaSection.classList.add('hidden');
+                    businessFields.forEach(field => field.required = false);
+                }
+            });
+
+            educationSelect.addEventListener('change', function() {
+                const value = this.value.toLowerCase();
+                const courseInputs = courseNameContainer.querySelectorAll('input');
+                const otherInput = otherEducationContainer.querySelector('input');
+
+                // Reset all first
+                courseNameContainer.classList.remove('open');
+                courseInputs.forEach(input => { input.required = false; input.value = ''; });
+                otherEducationContainer.classList.remove('open');
+                otherInput.required = false; otherInput.value = '';
+
+                if (value === 'degree' || value === 'graduate') {
+                    courseNameContainer.classList.add('open');
+                    courseInputs.forEach(input => input.required = true);
+                } else if (value === 'other') {
+                    otherEducationContainer.classList.add('open');
+                    otherInput.required = true;
+                }
+            });
+
+            hasChildrenRadios.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    const childrenCountInput = document.getElementById('childrenCount');
+                    if (this.value === 'yes') {
+                        childrenCountContainer.classList.add('open');
+                        childrenCountInput.required = true;
+                    } else {
+                        childrenCountContainer.classList.remove('open');
+                        childrenCountInput.required = false;
+                        childrenCountInput.value = '';
+                    }
+                });
+            });
+            
+            contactPermissionRadios.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    const contactInputs = contactDetailsContainer.querySelectorAll('input');
+                    if (this.value === 'yes') {
+                        contactDetailsContainer.classList.add('open');
+                        contactInputs.forEach(input => input.required = true);
+                    } else {
+                        contactDetailsContainer.classList.remove('open');
+                        contactInputs.forEach(input => {
+                            input.required = false;
+                            input.value = '';
+                        });
+                    }
+                });
+            });
+
+            fileInput.addEventListener('change', function() {
+                fileNameDisplay.textContent = this.files.length > 0 ? `File selected: ${this.files[0].name}` : '';
+            });
+
+            // --- Form Submission Handling ---
+            
+            form.addEventListener('submit', function(event) {
+                event.preventDefault();
+                if (form.checkValidity()) {
+                    const formData = new FormData(form);
+                    const userData = Object.fromEntries(formData.entries());
+                    
+                    navigateTo('actionPlan');
+                    generateActionPlan(userData);
+                    successMessage.classList.remove('hidden');
+                    successMessage.classList.add('flex');
+                } else {
+                    form.reportValidity();
+                }
+            });
+            
+            closeModalButton.addEventListener('click', function() {
+                successMessage.classList.add('hidden');
+                successMessage.classList.remove('flex');
+            });
+
+            // --- Gemini API Integration & Chat ---
+
+            async function callGeminiApi(prompt, systemInstruction) {
+                 const apiKey = ""; // API key will be injected by the environment.
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+                const payload = {
+                    systemInstruction: { parts: [{ text: systemInstruction }] },
+                    contents: prompt,
+                    tools: [{ "google_search": {} }], // Enable Google Search
+                };
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.statusText}`);
+                }
+                const result = await response.json();
+                return result.candidates?.[0]?.content?.parts?.[0]?.text;
+            }
+
+            async function generateActionPlan(userData) {
+                loadingState.classList.remove('hidden');
+                actionPlanContent.classList.add('hidden');
+                conversationHistory = []; // Reset history
+
+                const systemPrompt = `You are an expert career, business, and civic engagement advisor for Nigeria. Your goal is to provide a concise, encouraging, and actionable plan for the user based on the information they've provided. You must use your search tool to find real-time information when requested. The plan should be realistic and tailored to their situation in Nigeria. Structure your response in clear, easy-to-read markdown. Be encouraging and direct.`;
+                
+                let userInfo = `Here is the user's information:\n`;
+                for(const [key, value] of Object.entries(userData)) {
+                    if (value) userInfo += `- ${key}: ${value}\n`;
+                }
+
+                // Start building the prompt with the user's data
+                let userPrompt = `${userInfo}\nBased on this information, generate a personalised action plan covering two main areas: 1) Civic Engagement, and 2) Personal Development.`;
+
+                // Add specific instructions based on civic engagement answers
+                userPrompt += `\n\n**Civic Engagement Tasks:**\n`;
+                let hasCivicTasks = false;
+
+                if (userData.votersCard === 'no') {
+                    userPrompt += `- The user does not have a voter's card. Provide clear, encouraging instructions on how a Nigerian citizen can register to vote. Mention the official INEC website and the general steps involved.\n`;
+                    hasCivicTasks = true;
+                }
+                if (userData.knowsSenator === 'no' && userData.residence) {
+                    userPrompt += `- The user lives in ${userData.residence} State and does not know their senators. Find and provide the names of the three current senators representing ${userData.residence} State.\n`;
+                    hasCivicTasks = true;
+                }
+                if (userData.knowsRep === 'no') {
+                    userPrompt += `- The user does not know their House of Representatives member. Explain that this is specific to their local Federal Constituency and advise them on how to find this information (e.g., by checking the INEC website, asking local community leaders, or searching online for "who is the house of representative member for [their specific area]").\n`;
+                    hasCivicTasks = true;
+                }
+                if (userData.knowsStateAllocation === 'no' && userData.residence) {
+                    userPrompt += `- The user does not know their state's monthly allocation. Find the most recently published Federal Account Allocation Committee (FAAC) net distribution for ${userData.residence} State. Report the figure and briefly explain what this allocation is for.\n`;
+                    hasCivicTasks = true;
+                }
+                if (!hasCivicTasks) {
+                     userPrompt += `- The user seems civically aware. Provide a brief, encouraging message about the importance of continued engagement.\n`;
+                }
+
+
+                // Add instructions for the personal development plan
+                userPrompt += `\n**Personal Development Plan Task:**\n- Generate a personalised career/business action plan. If the person is a student, focus on career preparation, internships, and skill-building relevant to the Nigerian job market. If unemployed, focus on practical steps for skill-building, networking, and job searching in Nigeria. If self-employed, provide actionable tips to grow their specific business, find customers, and manage finances. If employed, suggest pathways for career advancement or side hustles. Address the user directly and make the advice specific and encouraging. Include a list of Nigerian websites or organisations they can get assistance from.`;
+
+                conversationHistory.push({ role: "user", parts: [{ text: userPrompt }] });
+
+                try {
+                    const text = await callGeminiApi(conversationHistory, systemPrompt);
+                    if (text) {
+                        conversationHistory.push({ role: "model", parts: [{ text: text }] });
+                        const formattedHtml = simpleMarkdownToHtml(text);
+                        actionPlanResult.innerHTML = formattedHtml;
+                    } else {
+                        throw new Error('No content received from API.');
+                    }
+                } catch (error) {
+                    console.error("Error generating action plan:", error);
+                    actionPlanResult.innerHTML = `<p class="text-red-500">Sorry, we couldn't generate your action plan at this time. Please try again later.</p>`;
+                } finally {
+                    loadingState.classList.add('hidden');
+                    actionPlanContent.classList.remove('hidden');
+                }
+            }
+            
+            async function handleChatMessage() {
+                const userMessage = chatInput.value.trim();
+                if (!userMessage) return;
+
+                appendMessage(userMessage, 'user');
+                chatInput.value = '';
+                chatInput.disabled = true;
+                sendChatBtn.disabled = true;
+
+                appendMessage('...', 'ai', true); // Thinking indicator
+
+                conversationHistory.push({ role: "user", parts: [{ text: userMessage }] });
+                const systemPrompt = `You are a helpful career and business development advisor in Nigeria, continuing a conversation. The user has already received an initial action plan. Your task is to answer their follow-up questions concisely and helpfully, using the entire conversation history for context. Be encouraging and provide practical, Nigeria-specific advice where possible.`;
+
+                try {
+                    const text = await callGeminiApi(conversationHistory, systemPrompt);
+                     const lastBubble = chatHistory.querySelector('.thinking');
+                    if (text) {
+                        conversationHistory.push({ role: "model", parts: [{ text: text }] });
+                         if(lastBubble) lastBubble.remove();
+                        appendMessage(text, 'ai');
+                    } else {
+                         if(lastBubble) lastBubble.innerHTML = "Sorry, I couldn't get a response.";
+                    }
+                } catch(error) {
+                    console.error("Chat error:", error);
+                    const lastBubble = chatHistory.querySelector('.thinking');
+                    if(lastBubble) lastBubble.innerHTML = "Error fetching response.";
+                } finally {
+                     chatInput.disabled = false;
+                     sendChatBtn.disabled = false;
+                     chatInput.focus();
+                }
+            }
+            
+            function appendMessage(content, type, isThinking = false) {
+                const bubble = document.createElement('div');
+                bubble.classList.add('chat-bubble', type);
+                if (isThinking) {
+                   bubble.classList.add('thinking');
+                   bubble.innerHTML = '<div class="flex items-center space-x-1"><div class="h-2 w-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div><div class="h-2 w-2 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div><div class="h-2 w-2 bg-gray-500 rounded-full animate-bounce"></div></div>';
+                } else {
+                   bubble.innerHTML = simpleMarkdownToHtml(content);
+                }
+                chatHistory.appendChild(bubble);
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+            }
+
+            sendChatBtn.addEventListener('click', handleChatMessage);
+            chatInput.addEventListener('keypress', (e) => {
+                if(e.key === 'Enter') handleChatMessage();
+            });
+
+            function simpleMarkdownToHtml(text) {
+                let html = text
+                    .replace(/## (.*)/g, '<h2>$1</h2>')
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/(\r\n|\n|\r)/gm, "<br>");
+                // Convert bullet points into a list
+                if (html.includes('* ')) {
+                    html = html.replace(/\* (.*?)(\<br\>|$)/g, '<li>$1</li>');
+                    html = '<ul>' + html.replace(/(\<\/li\>)(.*?)(?=\<li\>|$)/g, '$1') + '</ul>';
+                    html = html.replace(/<br><ul>/g, '<ul>').replace(/<\/ul><br>/g, '</ul>');
+                    html = html.replace(/<\/li\><ul>/g, '<li><ul>').replace(/<\/ul><\/li\>/g, '</ul></li>');
+                }
+                return html;
+            }
+
+            // --- Dashboard Chart Logic ---
+            function initializeDashboardCharts() {
+                if (employmentChartInstance) employmentChartInstance.destroy();
+                if (genderChartInstance) genderChartInstance.destroy();
+
+                const employmentCtx = document.getElementById('employmentChart').getContext('2d');
+                employmentChartInstance = new Chart(employmentCtx, {
+                    type: 'doughnut', data: { labels: ['Employed', 'Unemployed', 'Self-Employed', 'Student'], datasets: [{ data: [45, 25, 20, 10], backgroundColor: ['#4f46e5', '#f59e0b', '#10b981', '#6b7280'], hoverOffset: 4 }] },
+                    options: { responsive: true, plugins: { legend: { position: 'top' } } }
+                });
+
+                const genderCtx = document.getElementById('genderChart').getContext('2d');
+                genderChartInstance = new Chart(genderCtx, {
+                    type: 'pie', data: { labels: ['Male', 'Female'], datasets: [{ data: [55, 45], backgroundColor: ['#3b82f6', '#ec4899'], hoverOffset: 4 }] },
+                    options: { responsive: true, plugins: { legend: { position: 'top' } } }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
+
