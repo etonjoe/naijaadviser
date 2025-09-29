@@ -69,6 +69,18 @@
             @apply px-4 py-2 cursor-pointer hover:bg-gray-100;
         }
 
+        /* Added styles for green, bold borders */
+        .form-input, .form-select {
+            border-width: 2px;
+            border-color: #10b981; /* A nice, friendly green */
+        }
+        /* Updated focus style to match the new green theme */
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: #059669; /* A darker green for focus */
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+        }
+
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 flex items-center justify-center min-h-screen py-12 px-4 sm:px-6 lg:px-8">
@@ -91,8 +103,8 @@
                 <!-- Form starts here -->
                 <form id="submissionForm" class="space-y-6" novalidate>
                     <!-- Voter Information Section -->
-                    <div class="space-y-6">
-                         <h2 class="text-xl font-semibold border-b pb-2 text-gray-700">Civic Engagement</h2>
+                    <div class="space-y-6 bg-slate-50 p-6 rounded-xl border border-slate-200">
+                         <h2 class="text-xl font-semibold border-b pb-2 text-gray-700 border-slate-300">Civic Engagement</h2>
                          <!-- Do you have a voter's card? -->
                          <div>
                             <label class="block text-sm font-medium text-gray-700">Do you have a voter's card?</label>
@@ -201,8 +213,8 @@
                     </div>
 
                     <!-- Personal Information Section -->
-                    <div class="space-y-6 pt-6 border-t">
-                        <h2 class="text-xl font-semibold border-b pb-2 text-gray-700">Personal Information</h2>
+                    <div class="space-y-6 pt-6 border-t bg-slate-50 p-6 rounded-xl border border-slate-200">
+                        <h2 class="text-xl font-semibold border-b pb-2 text-gray-700 border-slate-300">Personal Information</h2>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <!-- State of Residence -->
                             <div class="relative">
@@ -286,8 +298,8 @@
 
 
                     <!-- Professional Information Section -->
-                    <div class="space-y-6 pt-6 border-t">
-                        <h2 class="text-xl font-semibold border-b pb-2 text-gray-700">Professional Background</h2>
+                    <div class="space-y-6 pt-6 border-t bg-slate-50 p-6 rounded-xl border border-slate-200">
+                        <h2 class="text-xl font-semibold border-b pb-2 text-gray-700 border-slate-300">Professional Background</h2>
                          <!-- Level of Education -->
                          <div>
                             <label for="education" class="block text-sm font-medium text-gray-700">Highest Level of Education</label>
@@ -377,8 +389,8 @@
                     </div>
 
                     <!-- Business Details Section (Conditional) -->
-                    <div id="businessIdeaSection" class="space-y-6 pt-6 border-t hidden">
-                        <h2 class="text-xl font-semibold border-b pb-2 text-gray-700">Skills & Business Idea</h2>
+                    <div id="businessIdeaSection" class="space-y-6 pt-6 border-t bg-slate-50 p-6 rounded-xl border border-slate-200 hidden">
+                        <h2 class="text-xl font-semibold border-b pb-2 text-gray-700 border-slate-300">Skills & Business Idea</h2>
                          <!-- Skills -->
                          <div>
                             <label for="skills" class="block text-sm font-medium text-gray-700">What skills do you have?</label>
@@ -419,8 +431,8 @@
                     </div>
 
                     <!-- Contact Information Section -->
-                    <div class="space-y-6 pt-6 border-t">
-                        <h2 class="text-xl font-semibold border-b pb-2 text-gray-700">Contact Permission</h2>
+                    <div class="space-y-6 pt-6 border-t bg-slate-50 p-6 rounded-xl border border-slate-200">
+                        <h2 class="text-xl font-semibold border-b pb-2 text-gray-700 border-slate-300">Contact Permission</h2>
                         <div>
                             <label class="block text-sm font-medium text-gray-700">May we contact you regarding your submission?</label>
                             <div class="mt-2 flex items-center space-x-6">
@@ -1035,4 +1047,5 @@
     </script>
 </body>
 </html>
+
 
